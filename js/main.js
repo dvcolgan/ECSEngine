@@ -19,7 +19,7 @@ Game = (function() {
       _this.entityManager = new EntityManager(window.components);
       _this.cq = cq(Game.SCREEN_WIDTH, Game.SCREEN_HEIGHT).appendTo('.gameboy');
       player = _this.entityManager.createEntityWithComponents([
-        [
+        ['PlayerComponent', {}], [
           'PixelPositionComponent', {
             x: 4 * Game.GRID_SIZE,
             y: 4 * Game.GRID_SIZE
@@ -64,7 +64,11 @@ Game = (function() {
           'DialogBoxTextComponent', {
             text: "OAK: It's unsafe!\nWild Pokemon live\nin the tall grass!"
           }
-        ], ['ActionInputComponent', {}], ['KeyboardArrowsInputComponent', {}]
+        ], [
+          'ActionInputComponent', {
+            enabled: false
+          }
+        ], ['KeyboardArrowsInputComponent', {}]
       ]);
       _this.initializeMap('pokemon-level.json');
       for (i = _i = 0; _i <= 3; i = ++_i) {
@@ -112,7 +116,8 @@ Game = (function() {
           _this.movementSystem.update(delta, _this.entityManager, _this.assetManager);
           _this.pokemonMovementSystem.update(delta, _this.entityManager, _this.assetManager);
           _this.tweenSystem.update(delta, _this.entityManager, _this.assetManager);
-          return _this.cameraFollowingSystem.update(delta, _this.entityManager, _this.assetManager);
+          _this.cameraFollowingSystem.update(delta, _this.entityManager, _this.assetManager);
+          return _this.dialogRenderingSystem.update(delta, _this.entityManager, _this.assetManager);
         },
         onrender: function(delta, time) {
           _this.cq.clear('white');

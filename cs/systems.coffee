@@ -1,6 +1,8 @@
 class PokemonMovementSystem
     update: (delta, entityManager, assetManager) ->
-        for [entity, movement, direction, arrows, gridPosition, pixelPosition] in entityManager.iterateEntitiesWithComponents(['PokemonMovementComponent', 'DirectionComponent', 'ActionInputComponent', 'GridPositionComponent', 'PixelPositionComponent'])
+        for [entity, movement, direction, input, gridPosition, pixelPosition] in entityManager.iterateEntitiesAndComponents(['PokemonMovementComponent', 'DirectionComponent', 'ActionInputComponent', 'GridPositionComponent', 'PixelPositionComponent'])
+            if not input.enabled then continue
+
             tweens = entityManager.getComponents(entity, 'TweenComponent')
             moving = no
             for tween in tweens
@@ -11,23 +13,25 @@ class PokemonMovementSystem
                 gridPosition.col = Math.round(pixelPosition.x / gridPosition.gridSize)
                 gridPosition.row = Math.round(pixelPosition.y / gridPosition.gridSize)
                 dx = dy = 0
-                if arrows.left then dx -= 1
-                if arrows.right then dx += 1
+                if input.left then dx -= 1
+                if input.right then dx += 1
                 if dx == 0
-                    if arrows.up then dy -= 1
-                    if arrows.down then dy += 1
+                    if input.up then dy -= 1
+                    if input.down then dy += 1
                 if dx > 0 or dx < 0 or dy > 0 or dy < 0
+                    console.log JSON.stringify(input)
+                    console.log dx + ' ' + dy
                     if dx < 0 then direction.direction = 'left'
                     if dx > 0 then direction.direction = 'right'
                     if dy < 0 then direction.direction = 'up'
                     if dy > 0 then direction.direction = 'down'
 
-                    for [_, collisionLayer] in entityManager.iterateEntitiesWithComponents(['TilemapCollisionLayerComponent'])
+                    for [_, collisionLayer] in entityManager.iterateEntitiesAndComponents(['TilemapCollisionLayerComponent'])
                         tileIdx = (gridPosition.row+dy) * collisionLayer.tileData.width + (gridPosition.col+dx)
                         nextTile = collisionLayer.tileData.data[tileIdx]
                         if nextTile == 0
                             canMove = true
-                            for [_, otherGridPosition, _] in entityManager.iterateEntitiesWithComponents(['GridPositionComponent', 'CollidableComponent'])
+                            for [_, otherGridPosition, _] in entityManager.iterateEntitiesAndComponents(['GridPositionComponent', 'CollidableComponent'])
                                 if (gridPosition.col+dx) == otherGridPosition.col and (gridPosition.row+dy) == otherGridPosition.row
                                     canMove = false
                             if canMove
@@ -51,7 +55,7 @@ class PokemonMovementSystem
 class TweenSystem
     # PSEUDO CODE
     update: (delta, entityManager, assetManager) ->
-        for [entity, tween] in entityManager.iterateEntitiesWithComponents(['TweenComponent'])
+        for [entity, tween] in entityManager.iterateEntitiesAndComponents(['TweenComponent'])
             if tween.start == tween.dest
                 entityManager.removeComponent(entity, tween)
 
@@ -86,10 +90,9 @@ class CanvasRenderSystem
     constructor: (@cq) ->
 
     draw: (delta, entityManager, assetManager) ->
-        camera = entityManager.getEntitiesWithComponents(['CameraComponent', 'PixelPositionComponent'])
-        cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent')
+        [camera, _, cameraPosition] = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent'])
 
-        for [entity, position, color, shape, direction] in entityManager.iterateEntitiesWithComponents(['PixelPositionComponent', 'ColorComponent', 'ShapeRendererComponent', 'DirectionComponent'])
+        for [entity, position, color, shape, direction] in entityManager.iterateEntitiesAndComponents(['PixelPositionComponent', 'ColorComponent', 'ShapeRendererComponent', 'DirectionComponent'])
             @cq.fillStyle(color.color)
             if shape.type == 'rectangle'
                 @cq.fillRect(position.x - cameraPosition.x, position.y - cameraPosition.y, shape.width, shape.height)
@@ -117,37 +120,61 @@ class CanvasRenderSystem
 
 class InputSystem
     updateKey: (key, value, entityManager, assetManager) ->
-        for [entity, _, arrows] in entityManager.iterateEntitiesWithComponents(['KeyboardArrowsInputComponent', 'ActionInputComponent'])
-            switch key
-                when 'left'
-                    arrows.left = value
-                when 'right'
-                    arrows.right = value
-                when 'up'
-                    arrows.up = value
-                when 'down'
-                    arrows.down = value
+        for [entity, _, input] in entityManager.iterateEntitiesAndComponents(['KeyboardArrowsInputComponent', 'ActionInputComponent'])
+            if input.enabled or value == off
+                if value == off
+                    if key == 'left'  then input.left = off
+                    if key == 'right' then input.right = off
+                    if key == 'up'    then input.up = off
+                    if key == 'down'  then input.down = off
+                    if key == 'z' or key == 'comma' then input.action = off
+                    if key == 'x' or key == 'q'     then input.cancel = off
+                else
+                    # TODO MAKE A COFFEESCRIPT PRECOMPILER
+                    #{% for dir in ['left', 'right', 'up', 'down'] %}
+                    #    if key == '{{ dir }}' then if input.{{ dir }} == 'hit' then input.{{ dir }} = 'held' else input.{{ dir }} = 'hit'
 
+                    if key == 'left'
+                        if input.left  == 'hit' then input.left  = 'held' else input.left  = 'hit'
+                    if key == 'right'
+                        if input.right == 'hit' then input.right = 'held' else input.right = 'hit'
+                    if key == 'up'
+                        if input.up    == 'hit' then input.up    = 'held' else input.up    = 'hit'
+                    if key == 'down'
+                        if input.down  == 'hit' then input.down  = 'held' else input.down  = 'hit'
 
+                    if key == 'z' or key == 'comma'
+                        if input.action == 'hit' then input.action = 'held' else input.action = 'hit'
+                    if key == 'x' or key == 'q'
+                        if input.cancel == 'hit' then input.cancel = 'held' else input.cancel = 'hit'
+
+# TODO make this generic for any key using a nice hash table
 class RandomInputSystem
     update: (delta, entityManager, assetManager) ->
-        for [entity, _, arrows] in entityManager.iterateEntitiesWithComponents(['RandomArrowsInputComponent', 'ActionInputComponent'])
-            arrows.left = arrows.right = arrows.up = arrows.down = false
+        for [entity, _, input] in entityManager.iterateEntitiesAndComponents(['RandomArrowsInputComponent', 'ActionInputComponent'])
+            input.left = input.right = input.up = input.down = false
             chance = 0.002
-            if Math.random() < chance then arrows.left = true
-            if Math.random() < chance then arrows.right = true
-            if Math.random() < chance then arrows.up = true
-            if Math.random() < chance then arrows.down = true
+            if Math.random() < chance
+                if input.left   == 'hit' then input.left   = 'held' else input.left   = 'hit'
+            if Math.random() < chance
+                if input.right  == 'hit' then input.right  = 'held' else input.right  = 'hit'
+            if Math.random() < chance
+                if input.up     == 'hit' then input.up     = 'held' else input.up     = 'hit'
+            if Math.random() < chance
+                if input.down   == 'hit' then input.down   = 'held' else input.down   = 'hit'
+            if Math.random() < chance
+                if input.action == 'hit' then input.action = 'held' else input.action = 'hit'
+                
 
 
 class MovementSystem
     update: (delta, entityManager, assetManager) ->
-        for [entity, position, velocity, arrows] in entityManager.iterateEntitiesWithComponents(['PixelPositionComponent', 'VelocityComponent', 'ArrowKeyInputComponent'])
+        for [entity, position, velocity, input] in entityManager.iterateEntitiesAndComponents(['PixelPositionComponent', 'VelocityComponent', 'ArrowKeyInputComponent'])
             velocity.dx = velocity.dy = 0
-            if arrows.left then velocity.dx -= velocity.maxSpeed * delta
-            if arrows.right then velocity.dx += velocity.maxSpeed * delta
-            if arrows.up then velocity.dy -= velocity.maxSpeed * delta
-            if arrows.down then velocity.dy += velocity.maxSpeed * delta
+            if input.left then velocity.dx -= velocity.maxSpeed * delta
+            if input.right then velocity.dx += velocity.maxSpeed * delta
+            if input.up then velocity.dy -= velocity.maxSpeed * delta
+            if input.down then velocity.dy += velocity.maxSpeed * delta
 
             position.x += velocity.dx
             position.y += velocity.dy
@@ -155,13 +182,10 @@ class MovementSystem
 
 class CameraFollowingSystem
     update: (delta, entityManager, assetManager) ->
-        camera = entityManager.getSingletonEntityWithComponent('CameraComponent')
-        cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent')
-        followee = entityManager.getSingletonEntityWithComponent('CameraFollowsComponent')
-        followeePosition = entityManager.getComponent(followee, 'PixelPositionComponent')
+        [camera, _, cameraPosition] = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent'])
+        [followee, _, followeePosition] = entityManager.getFirstEntityAndComponents(['CameraFollowsComponent', 'PixelPositionComponent'])
 
-        mapLayer = entityManager.getEntitiesWithComponent('TilemapVisibleLayerComponent')[0]
-        mapLayerComponent = entityManager.getComponent(mapLayer, 'TilemapVisibleLayerComponent')
+        [mapLayer, mapLayerComponent] = entityManager.getFirstEntityAndComponents(['TilemapVisibleLayerComponent'])
 
         mapWidth = mapLayerComponent.tileWidth * mapLayerComponent.tileData.width
         mapHeight = mapLayerComponent.tileHeight * mapLayerComponent.tileData.height
@@ -176,10 +200,9 @@ class TilemapRenderingSystem
     constructor: (@cq) ->
 
     draw: (delta, entityManager, assetManager) ->
-        camera = entityManager.getSingletonEntityWithComponent('CameraComponent')
-        cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent')
+        [camera, _, cameraPosition] = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent'])
 
-        entities = entityManager.getEntitiesWithComponent('TilemapVisibleLayerComponent')
+        entities = entityManager.getEntitiesHavingComponent('TilemapVisibleLayerComponent')
         layers = []
         for entity in entities
             layers.push(entityManager.getComponent(entity, 'TilemapVisibleLayerComponent'))
@@ -220,15 +243,45 @@ class TilemapRenderingSystem
 class DialogRenderingSystem
     constructor: (@cq) ->
     update: (delta, entityManager, assetManager) ->
-        
+        [playerEntity, _, playerGridPosition, playerDirection, playerInput] = entityManager.getFirstEntityAndComponents(['PlayerComponent', 'GridPositionComponent', 'DirectionComponent', 'ActionInputComponent'])
+        if playerInput.enabled
+            if playerInput.action == 'hit'
+                for [otherEntity, otherDirection, otherGridPosition, ] in entityManager.iterateEntitiesAndComponents(['DirectionComponent', 'GridPositionComponent'])
+                    dx = if playerDirection.direction == 'left' then -1 else if playerDirection.direction == 'right' then 1 else 0
+                    dy = if playerDirection.direction ==   'up' then -1 else if playerDirection.direction ==  'down' then 1 else 0
+                    if otherGridPosition.col == playerGridPosition.col + dx and otherGridPosition.row == playerGridPosition.row + dy
 
+                        # Found the other person we are talking to
+                        if playerDirection.direction == 'left' then otherDirection.direction = 'right'
+                        if playerDirection.direction == 'right' then otherDirection.direction = 'left'
+                        if playerDirection.direction == 'up' then otherDirection.direction = 'down'
+                        if playerDirection.direction == 'down' then otherDirection.direction = 'up'
+
+                        playerInput.enabled = no
+                        otherInput = entityManager.getComponent(otherEntity, 'ActionInputComponent')
+                        if otherInput then otherInput.enabled = no
+
+                        [dialogBoxEntity, dialogBox, dialogInput] = entityManager.getFirstEntityAndComponents(['DialogBoxComponent', 'ActionInputComponent'])
+                        dialogBox.visible = true
+                        dialogBox.talkee = otherEntity
+                        dialogInput.enabled = yes
+                        break
+        else
+            [dialogBoxEntity, dialogBox, dialogBoxText, dialogInput] = entityManager.getFirstEntityAndComponents(['DialogBoxComponent', 'DialogBoxTextComponent', 'ActionInputComponent'])
+            if dialogInput.action == 'hit'
+                dialogInput.enabled = no
+                dialogBox.visible = false
+                [playerEntity, _, playerInput] = entityManager.getFirstEntityAndComponents(['PlayerComponent', 'ActionInputComponent'])
+                playerInput.enabled = yes
+                talkeeInput = entityManager.getComponent(dialogBox.talkee, 'ActionInputComponent')
+                if talkeeInput then talkeeInput.enabled = yes
+
+            
 
     draw: (delta, entityManager, assetManager) ->
-        result = entityManager.getEntitiesWithComponents('DialogBoxComponent', 'VisibleComponent')
-        if result.length > 0
-            dialogBox = result[0]
-            dialogBoxText = entityManager.getComponent(dialogBox, 'DialogBoxTextComponent')
-
+        [_, dialogBox, dialogBoxText] = entityManager.getFirstEntityAndComponents(['DialogBoxComponent', 'DialogBoxTextComponent'])
+        
+        if dialogBox.visible
             @cq.font('16px "Press Start 2P"').textBaseline('top').fillStyle('black')
 
             image = assetManager.assets['pokemon-dialog-box.png']

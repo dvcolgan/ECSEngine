@@ -20,6 +20,7 @@ class Game
             #@cq.context.webkitImageSmoothingEnabled = false
 
             player = @entityManager.createEntityWithComponents([
+                ['PlayerComponent', {}]
                 ['PixelPositionComponent', { x: 4 * Game.GRID_SIZE, y: 4 * Game.GRID_SIZE }]
                 ['GridPositionComponent', { col: 4, row: 4, gridSize: Game.GRID_SIZE }]
                 ['ShapeRendererComponent', { width: Game.GRID_SIZE, height: Game.GRID_SIZE, type: 'rectangle' }]
@@ -41,7 +42,7 @@ class Game
             dialogBox = @entityManager.createEntityWithComponents([
                 ['DialogBoxComponent', {}]
                 ['DialogBoxTextComponent', { text: "OAK: It's unsafe!\nWild Pokemon live\nin the tall grass!" }]
-                ['ActionInputComponent', {}]
+                ['ActionInputComponent', { enabled: no }]
                 ['KeyboardArrowsInputComponent', {}]
             ])
 
@@ -80,6 +81,7 @@ class Game
                     @pokemonMovementSystem.update(delta, @entityManager, @assetManager)
                     @tweenSystem.update(delta, @entityManager, @assetManager)
                     @cameraFollowingSystem.update(delta, @entityManager, @assetManager)
+                    @dialogRenderingSystem.update(delta, @entityManager, @assetManager)
 
                 onrender: (delta, time) =>
                     @cq.clear('white')

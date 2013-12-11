@@ -35,6 +35,8 @@ class EntityManager
         else
             store[entity] = [component]
 
+        return component
+
     removeComponent: (entity, component) ->
         if component._name not of @componentStores
             return null
@@ -47,15 +49,6 @@ class EntityManager
                 delete store[entity]
             return component
         return null
-            
-    getSingletonEntityWithComponent: (componentName) ->
-        entities = @getEntitiesWithComponent(componentName)
-        if entities.length == 0
-            return null
-        else if entities.length > 1
-            throw 'Multiple instances of singleton component!'
-        else
-            return entities[0]
 
     createEntityWithComponents: (components) ->
         entity = @createEntity()
@@ -63,24 +56,17 @@ class EntityManager
             @addComponent(entity, componentName, args)
         return entity
 
-    hasComponent: (entity, componentName) ->
-        if componentName not of @componentStores
-            return false
-        else
-            store = @componentStores[componentName]
-            return entity of store and store[entity].length > 0
-
-    getEntitiesWithComponent: (componentName) ->
+    getEntitiesHavingComponent: (componentName) ->
         if componentName of @componentStores
             return Object.keys(@componentStores[componentName])
         else
             return []
 
-    getEntitiesWithComponents: (componentNames) ->
+    getEntitiesHavingComponents: (componentNames) ->
         allEntities = {}
         numComponents = componentNames.length
         for componentName in componentNames
-            for entity in @getEntitiesWithComponent(componentName)
+            for entity in @getEntitiesHavingComponent(componentName)
                 if entity of allEntities
                     allEntities[entity]++
                 else
@@ -117,15 +103,28 @@ class EntityManager
     entityHasComponent: (entity, componentName) ->
         not not @getComponent(entity, componentName)
 
+    # Main selector methods
+
     # This could be optimized later if needed, currently it is just a method mashup.
-    iterateEntitiesWithComponents: (componentNames) ->
+    iterateEntitiesAndComponents: (componentNames) ->
         results = []
-        for entity in @getEntitiesWithComponents(componentNames)
+        for entity in @getEntitiesHavingComponents(componentNames)
             result = [entity]
             for componentName in componentNames
                 result.push(@getComponent(entity, componentName))
             results.push(result)
         return results
+            
+    getFirstEntityAndComponents: (componentNames) ->
+        entities = @getEntitiesHavingComponents(componentNames)
+        if entities.length > 0
+            entity = entities[0]
+            result = [entity]
+            for componentName in componentNames
+                result.push(@getComponent(entity, componentName))
+            return result
+        else
+            return []
 
     save: ->
         return JSON.stringify(@componentStores)

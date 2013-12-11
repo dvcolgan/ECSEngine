@@ -1,4 +1,6 @@
 window.components =
+    PlayerComponent: {}
+
     PixelPositionComponent:
         x: 0
         y: 0
@@ -33,6 +35,7 @@ window.components =
         up: off
         down: off
         action: off
+        enabled: yes
 
     RandomArrowsInputComponent: {}
 
@@ -78,9 +81,10 @@ window.components =
 
     TilemapIndoorCollisionComponent: {}
 
-    DialogBoxComponent: {}
+    DialogBoxComponent:
+        visible: false
+        talkee: null
 
     DialogBoxTextComponent:
         text: ''
 
-    VisibleComponent: {}

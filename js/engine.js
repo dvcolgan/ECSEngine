@@ -38,10 +38,11 @@ EntityManager = (function() {
     }
     component._name = componentName;
     if (entity in store) {
-      return store[entity].push(component);
+      store[entity].push(component);
     } else {
-      return store[entity] = [component];
+      store[entity] = [component];
     }
+    return component;
   };
 
   EntityManager.prototype.removeComponent = function(entity, component) {
@@ -62,18 +63,6 @@ EntityManager = (function() {
     return null;
   };
 
-  EntityManager.prototype.getSingletonEntityWithComponent = function(componentName) {
-    var entities;
-    entities = this.getEntitiesWithComponent(componentName);
-    if (entities.length === 0) {
-      return null;
-    } else if (entities.length > 1) {
-      throw 'Multiple instances of singleton component!';
-    } else {
-      return entities[0];
-    }
-  };
-
   EntityManager.prototype.createEntityWithComponents = function(components) {
     var args, componentName, entity, _i, _len, _ref;
     entity = this.createEntity();
@@ -84,17 +73,7 @@ EntityManager = (function() {
     return entity;
   };
 
-  EntityManager.prototype.hasComponent = function(entity, componentName) {
-    var store;
-    if (!(componentName in this.componentStores)) {
-      return false;
-    } else {
-      store = this.componentStores[componentName];
-      return entity in store && store[entity].length > 0;
-    }
-  };
-
-  EntityManager.prototype.getEntitiesWithComponent = function(componentName) {
+  EntityManager.prototype.getEntitiesHavingComponent = function(componentName) {
     if (componentName in this.componentStores) {
       return Object.keys(this.componentStores[componentName]);
     } else {
@@ -102,13 +81,13 @@ EntityManager = (function() {
     }
   };
 
-  EntityManager.prototype.getEntitiesWithComponents = function(componentNames) {
+  EntityManager.prototype.getEntitiesHavingComponents = function(componentNames) {
     var allEntities, componentName, count, entity, numComponents, result, _i, _j, _len, _len1, _ref;
     allEntities = {};
     numComponents = componentNames.length;
     for (_i = 0, _len = componentNames.length; _i < _len; _i++) {
       componentName = componentNames[_i];
-      _ref = this.getEntitiesWithComponent(componentName);
+      _ref = this.getEntitiesHavingComponent(componentName);
       for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
         entity = _ref[_j];
         if (entity in allEntities) {
@@ -160,10 +139,10 @@ EntityManager = (function() {
     return !!this.getComponent(entity, componentName);
   };
 
-  EntityManager.prototype.iterateEntitiesWithComponents = function(componentNames) {
+  EntityManager.prototype.iterateEntitiesAndComponents = function(componentNames) {
     var componentName, entity, result, results, _i, _j, _len, _len1, _ref;
     results = [];
-    _ref = this.getEntitiesWithComponents(componentNames);
+    _ref = this.getEntitiesHavingComponents(componentNames);
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       entity = _ref[_i];
       result = [entity];
@@ -174,6 +153,22 @@ EntityManager = (function() {
       results.push(result);
     }
     return results;
+  };
+
+  EntityManager.prototype.getFirstEntityAndComponents = function(componentNames) {
+    var componentName, entities, entity, result, _i, _len;
+    entities = this.getEntitiesHavingComponents(componentNames);
+    if (entities.length > 0) {
+      entity = entities[0];
+      result = [entity];
+      for (_i = 0, _len = componentNames.length; _i < _len; _i++) {
+        componentName = componentNames[_i];
+        result.push(this.getComponent(entity, componentName));
+      }
+      return result;
+    } else {
+      return [];
+    }
   };
 
   EntityManager.prototype.save = function() {

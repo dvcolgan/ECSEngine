@@ -5,11 +5,14 @@ PokemonMovementSystem = (function() {
   function PokemonMovementSystem() {}
 
   PokemonMovementSystem.prototype.update = function(delta, entityManager, assetManager) {
-    var arrows, canMove, collisionLayer, direction, dx, dy, entity, gridPosition, movement, moving, nextTile, otherGridPosition, pixelPosition, tileIdx, tween, tweens, _, _i, _j, _len, _len1, _ref, _ref1, _results;
-    _ref = entityManager.iterateEntitiesWithComponents(['PokemonMovementComponent', 'DirectionComponent', 'ActionInputComponent', 'GridPositionComponent', 'PixelPositionComponent']);
+    var canMove, collisionLayer, direction, dx, dy, entity, gridPosition, input, movement, moving, nextTile, otherGridPosition, pixelPosition, tileIdx, tween, tweens, _, _i, _j, _len, _len1, _ref, _ref1, _results;
+    _ref = entityManager.iterateEntitiesAndComponents(['PokemonMovementComponent', 'DirectionComponent', 'ActionInputComponent', 'GridPositionComponent', 'PixelPositionComponent']);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      _ref1 = _ref[_i], entity = _ref1[0], movement = _ref1[1], direction = _ref1[2], arrows = _ref1[3], gridPosition = _ref1[4], pixelPosition = _ref1[5];
+      _ref1 = _ref[_i], entity = _ref1[0], movement = _ref1[1], direction = _ref1[2], input = _ref1[3], gridPosition = _ref1[4], pixelPosition = _ref1[5];
+      if (!input.enabled) {
+        continue;
+      }
       tweens = entityManager.getComponents(entity, 'TweenComponent');
       moving = false;
       for (_j = 0, _len1 = tweens.length; _j < _len1; _j++) {
@@ -23,21 +26,23 @@ PokemonMovementSystem = (function() {
         gridPosition.col = Math.round(pixelPosition.x / gridPosition.gridSize);
         gridPosition.row = Math.round(pixelPosition.y / gridPosition.gridSize);
         dx = dy = 0;
-        if (arrows.left) {
+        if (input.left) {
           dx -= 1;
         }
-        if (arrows.right) {
+        if (input.right) {
           dx += 1;
         }
         if (dx === 0) {
-          if (arrows.up) {
+          if (input.up) {
             dy -= 1;
           }
-          if (arrows.down) {
+          if (input.down) {
             dy += 1;
           }
         }
         if (dx > 0 || dx < 0 || dy > 0 || dy < 0) {
+          console.log(JSON.stringify(input));
+          console.log(dx + ' ' + dy);
           if (dx < 0) {
             direction.direction = 'left';
           }
@@ -52,7 +57,7 @@ PokemonMovementSystem = (function() {
           }
           _results.push((function() {
             var _k, _l, _len2, _len3, _ref2, _ref3, _ref4, _ref5, _results1;
-            _ref2 = entityManager.iterateEntitiesWithComponents(['TilemapCollisionLayerComponent']);
+            _ref2 = entityManager.iterateEntitiesAndComponents(['TilemapCollisionLayerComponent']);
             _results1 = [];
             for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
               _ref3 = _ref2[_k], _ = _ref3[0], collisionLayer = _ref3[1];
@@ -60,7 +65,7 @@ PokemonMovementSystem = (function() {
               nextTile = collisionLayer.tileData.data[tileIdx];
               if (nextTile === 0) {
                 canMove = true;
-                _ref4 = entityManager.iterateEntitiesWithComponents(['GridPositionComponent', 'CollidableComponent']);
+                _ref4 = entityManager.iterateEntitiesAndComponents(['GridPositionComponent', 'CollidableComponent']);
                 for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
                   _ref5 = _ref4[_l], _ = _ref5[0], otherGridPosition = _ref5[1], _ = _ref5[2];
                   if ((gridPosition.col + dx) === otherGridPosition.col && (gridPosition.row + dy) === otherGridPosition.row) {
@@ -117,7 +122,7 @@ TweenSystem = (function() {
 
   TweenSystem.prototype.update = function(delta, entityManager, assetManager) {
     var b, c, dir, entity, t, tween, _i, _len, _ref, _ref1, _results;
-    _ref = entityManager.iterateEntitiesWithComponents(['TweenComponent']);
+    _ref = entityManager.iterateEntitiesAndComponents(['TweenComponent']);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       _ref1 = _ref[_i], entity = _ref1[0], tween = _ref1[1];
@@ -165,13 +170,12 @@ CanvasRenderSystem = (function() {
   }
 
   CanvasRenderSystem.prototype.draw = function(delta, entityManager, assetManager) {
-    var camera, cameraPosition, color, direction, entity, fromX, fromY, position, shape, toX, toY, _i, _len, _ref, _ref1, _results;
-    camera = entityManager.getEntitiesWithComponents(['CameraComponent', 'PixelPositionComponent']);
-    cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent');
-    _ref = entityManager.iterateEntitiesWithComponents(['PixelPositionComponent', 'ColorComponent', 'ShapeRendererComponent', 'DirectionComponent']);
+    var camera, cameraPosition, color, direction, entity, fromX, fromY, position, shape, toX, toY, _, _i, _len, _ref, _ref1, _ref2, _results;
+    _ref = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent']), camera = _ref[0], _ = _ref[1], cameraPosition = _ref[2];
+    _ref1 = entityManager.iterateEntitiesAndComponents(['PixelPositionComponent', 'ColorComponent', 'ShapeRendererComponent', 'DirectionComponent']);
     _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      _ref1 = _ref[_i], entity = _ref1[0], position = _ref1[1], color = _ref1[2], shape = _ref1[3], direction = _ref1[4];
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      _ref2 = _ref1[_i], entity = _ref2[0], position = _ref2[1], color = _ref2[2], shape = _ref2[3], direction = _ref2[4];
       this.cq.fillStyle(color.color);
       if (shape.type === 'rectangle') {
         this.cq.fillRect(position.x - cameraPosition.x, position.y - cameraPosition.y, shape.width, shape.height);
@@ -216,26 +220,81 @@ InputSystem = (function() {
   function InputSystem() {}
 
   InputSystem.prototype.updateKey = function(key, value, entityManager, assetManager) {
-    var arrows, entity, _, _i, _len, _ref, _ref1, _results;
-    _ref = entityManager.iterateEntitiesWithComponents(['KeyboardArrowsInputComponent', 'ActionInputComponent']);
+    var entity, input, _, _i, _len, _ref, _ref1, _results;
+    _ref = entityManager.iterateEntitiesAndComponents(['KeyboardArrowsInputComponent', 'ActionInputComponent']);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      _ref1 = _ref[_i], entity = _ref1[0], _ = _ref1[1], arrows = _ref1[2];
-      switch (key) {
-        case 'left':
-          _results.push(arrows.left = value);
-          break;
-        case 'right':
-          _results.push(arrows.right = value);
-          break;
-        case 'up':
-          _results.push(arrows.up = value);
-          break;
-        case 'down':
-          _results.push(arrows.down = value);
-          break;
-        default:
-          _results.push(void 0);
+      _ref1 = _ref[_i], entity = _ref1[0], _ = _ref1[1], input = _ref1[2];
+      if (input.enabled || value === false) {
+        if (value === false) {
+          if (key === 'left') {
+            input.left = false;
+          }
+          if (key === 'right') {
+            input.right = false;
+          }
+          if (key === 'up') {
+            input.up = false;
+          }
+          if (key === 'down') {
+            input.down = false;
+          }
+          if (key === 'z' || key === 'comma') {
+            input.action = false;
+          }
+          if (key === 'x' || key === 'q') {
+            _results.push(input.cancel = false);
+          } else {
+            _results.push(void 0);
+          }
+        } else {
+          if (key === 'left') {
+            if (input.left === 'hit') {
+              input.left = 'held';
+            } else {
+              input.left = 'hit';
+            }
+          }
+          if (key === 'right') {
+            if (input.right === 'hit') {
+              input.right = 'held';
+            } else {
+              input.right = 'hit';
+            }
+          }
+          if (key === 'up') {
+            if (input.up === 'hit') {
+              input.up = 'held';
+            } else {
+              input.up = 'hit';
+            }
+          }
+          if (key === 'down') {
+            if (input.down === 'hit') {
+              input.down = 'held';
+            } else {
+              input.down = 'hit';
+            }
+          }
+          if (key === 'z' || key === 'comma') {
+            if (input.action === 'hit') {
+              input.action = 'held';
+            } else {
+              input.action = 'hit';
+            }
+          }
+          if (key === 'x' || key === 'q') {
+            if (input.cancel === 'hit') {
+              _results.push(input.cancel = 'held');
+            } else {
+              _results.push(input.cancel = 'hit');
+            }
+          } else {
+            _results.push(void 0);
+          }
+        }
+      } else {
+        _results.push(void 0);
       }
     }
     return _results;
@@ -249,24 +308,47 @@ RandomInputSystem = (function() {
   function RandomInputSystem() {}
 
   RandomInputSystem.prototype.update = function(delta, entityManager, assetManager) {
-    var arrows, chance, entity, _, _i, _len, _ref, _ref1, _results;
-    _ref = entityManager.iterateEntitiesWithComponents(['RandomArrowsInputComponent', 'ActionInputComponent']);
+    var chance, entity, input, _, _i, _len, _ref, _ref1, _results;
+    _ref = entityManager.iterateEntitiesAndComponents(['RandomArrowsInputComponent', 'ActionInputComponent']);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      _ref1 = _ref[_i], entity = _ref1[0], _ = _ref1[1], arrows = _ref1[2];
-      arrows.left = arrows.right = arrows.up = arrows.down = false;
+      _ref1 = _ref[_i], entity = _ref1[0], _ = _ref1[1], input = _ref1[2];
+      input.left = input.right = input.up = input.down = false;
       chance = 0.002;
       if (Math.random() < chance) {
-        arrows.left = true;
+        if (input.left === 'hit') {
+          input.left = 'held';
+        } else {
+          input.left = 'hit';
+        }
       }
       if (Math.random() < chance) {
-        arrows.right = true;
+        if (input.right === 'hit') {
+          input.right = 'held';
+        } else {
+          input.right = 'hit';
+        }
       }
       if (Math.random() < chance) {
-        arrows.up = true;
+        if (input.up === 'hit') {
+          input.up = 'held';
+        } else {
+          input.up = 'hit';
+        }
       }
       if (Math.random() < chance) {
-        _results.push(arrows.down = true);
+        if (input.down === 'hit') {
+          input.down = 'held';
+        } else {
+          input.down = 'hit';
+        }
+      }
+      if (Math.random() < chance) {
+        if (input.action === 'hit') {
+          _results.push(input.action = 'held');
+        } else {
+          _results.push(input.action = 'hit');
+        }
       } else {
         _results.push(void 0);
       }
@@ -282,22 +364,22 @@ MovementSystem = (function() {
   function MovementSystem() {}
 
   MovementSystem.prototype.update = function(delta, entityManager, assetManager) {
-    var arrows, entity, position, velocity, _i, _len, _ref, _ref1, _results;
-    _ref = entityManager.iterateEntitiesWithComponents(['PixelPositionComponent', 'VelocityComponent', 'ArrowKeyInputComponent']);
+    var entity, input, position, velocity, _i, _len, _ref, _ref1, _results;
+    _ref = entityManager.iterateEntitiesAndComponents(['PixelPositionComponent', 'VelocityComponent', 'ArrowKeyInputComponent']);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      _ref1 = _ref[_i], entity = _ref1[0], position = _ref1[1], velocity = _ref1[2], arrows = _ref1[3];
+      _ref1 = _ref[_i], entity = _ref1[0], position = _ref1[1], velocity = _ref1[2], input = _ref1[3];
       velocity.dx = velocity.dy = 0;
-      if (arrows.left) {
+      if (input.left) {
         velocity.dx -= velocity.maxSpeed * delta;
       }
-      if (arrows.right) {
+      if (input.right) {
         velocity.dx += velocity.maxSpeed * delta;
       }
-      if (arrows.up) {
+      if (input.up) {
         velocity.dy -= velocity.maxSpeed * delta;
       }
-      if (arrows.down) {
+      if (input.down) {
         velocity.dy += velocity.maxSpeed * delta;
       }
       position.x += velocity.dx;
@@ -314,13 +396,10 @@ CameraFollowingSystem = (function() {
   function CameraFollowingSystem() {}
 
   CameraFollowingSystem.prototype.update = function(delta, entityManager, assetManager) {
-    var camera, cameraPosition, followee, followeePosition, mapHeight, mapLayer, mapLayerComponent, mapWidth;
-    camera = entityManager.getSingletonEntityWithComponent('CameraComponent');
-    cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent');
-    followee = entityManager.getSingletonEntityWithComponent('CameraFollowsComponent');
-    followeePosition = entityManager.getComponent(followee, 'PixelPositionComponent');
-    mapLayer = entityManager.getEntitiesWithComponent('TilemapVisibleLayerComponent')[0];
-    mapLayerComponent = entityManager.getComponent(mapLayer, 'TilemapVisibleLayerComponent');
+    var camera, cameraPosition, followee, followeePosition, mapHeight, mapLayer, mapLayerComponent, mapWidth, _, _ref, _ref1, _ref2;
+    _ref = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent']), camera = _ref[0], _ = _ref[1], cameraPosition = _ref[2];
+    _ref1 = entityManager.getFirstEntityAndComponents(['CameraFollowsComponent', 'PixelPositionComponent']), followee = _ref1[0], _ = _ref1[1], followeePosition = _ref1[2];
+    _ref2 = entityManager.getFirstEntityAndComponents(['TilemapVisibleLayerComponent']), mapLayer = _ref2[0], mapLayerComponent = _ref2[1];
     mapWidth = mapLayerComponent.tileWidth * mapLayerComponent.tileData.width;
     mapHeight = mapLayerComponent.tileHeight * mapLayerComponent.tileData.height;
     cameraPosition.x = followeePosition.x - (Game.SCREEN_WIDTH / 2 - 32);
@@ -339,10 +418,9 @@ TilemapRenderingSystem = (function() {
   }
 
   TilemapRenderingSystem.prototype.draw = function(delta, entityManager, assetManager) {
-    var camera, cameraPosition, col, endCol, endRow, entities, entity, layer, layers, row, screenX, screenY, startCol, startRow, thisTile, thisTileImageX, thisTileImageY, tileIdx, tileImage, tileImageTilesHigh, tileImageTilesWide, _i, _j, _len, _len1, _results;
-    camera = entityManager.getSingletonEntityWithComponent('CameraComponent');
-    cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent');
-    entities = entityManager.getEntitiesWithComponent('TilemapVisibleLayerComponent');
+    var camera, cameraPosition, col, endCol, endRow, entities, entity, layer, layers, row, screenX, screenY, startCol, startRow, thisTile, thisTileImageX, thisTileImageY, tileIdx, tileImage, tileImageTilesHigh, tileImageTilesWide, _, _i, _j, _len, _len1, _ref, _results;
+    _ref = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent']), camera = _ref[0], _ = _ref[1], cameraPosition = _ref[2];
+    entities = entityManager.getEntitiesHavingComponent('TilemapVisibleLayerComponent');
     layers = [];
     for (_i = 0, _len = entities.length; _i < _len; _i++) {
       entity = entities[_i];
@@ -399,21 +477,72 @@ DialogRenderingSystem = (function() {
     this.cq = cq;
   }
 
-  DialogRenderingSystem.prototype.update = function(delta, entityManager, assetManager) {};
+  DialogRenderingSystem.prototype.update = function(delta, entityManager, assetManager) {
+    var dialogBox, dialogBoxEntity, dialogBoxText, dialogInput, dx, dy, otherDirection, otherEntity, otherGridPosition, otherInput, playerDirection, playerEntity, playerGridPosition, playerInput, talkeeInput, _, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _results;
+    _ref = entityManager.getFirstEntityAndComponents(['PlayerComponent', 'GridPositionComponent', 'DirectionComponent', 'ActionInputComponent']), playerEntity = _ref[0], _ = _ref[1], playerGridPosition = _ref[2], playerDirection = _ref[3], playerInput = _ref[4];
+    if (playerInput.enabled) {
+      if (playerInput.action === 'hit') {
+        _ref1 = entityManager.iterateEntitiesAndComponents(['DirectionComponent', 'GridPositionComponent']);
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          _ref2 = _ref1[_i], otherEntity = _ref2[0], otherDirection = _ref2[1], otherGridPosition = _ref2[2];
+          dx = playerDirection.direction === 'left' ? -1 : playerDirection.direction === 'right' ? 1 : 0;
+          dy = playerDirection.direction === 'up' ? -1 : playerDirection.direction === 'down' ? 1 : 0;
+          if (otherGridPosition.col === playerGridPosition.col + dx && otherGridPosition.row === playerGridPosition.row + dy) {
+            if (playerDirection.direction === 'left') {
+              otherDirection.direction = 'right';
+            }
+            if (playerDirection.direction === 'right') {
+              otherDirection.direction = 'left';
+            }
+            if (playerDirection.direction === 'up') {
+              otherDirection.direction = 'down';
+            }
+            if (playerDirection.direction === 'down') {
+              otherDirection.direction = 'up';
+            }
+            playerInput.enabled = false;
+            otherInput = entityManager.getComponent(otherEntity, 'ActionInputComponent');
+            if (otherInput) {
+              otherInput.enabled = false;
+            }
+            _ref3 = entityManager.getFirstEntityAndComponents(['DialogBoxComponent', 'ActionInputComponent']), dialogBoxEntity = _ref3[0], dialogBox = _ref3[1], dialogInput = _ref3[2];
+            dialogBox.visible = true;
+            dialogBox.talkee = otherEntity;
+            dialogInput.enabled = true;
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      }
+    } else {
+      _ref4 = entityManager.getFirstEntityAndComponents(['DialogBoxComponent', 'DialogBoxTextComponent', 'ActionInputComponent']), dialogBoxEntity = _ref4[0], dialogBox = _ref4[1], dialogBoxText = _ref4[2], dialogInput = _ref4[3];
+      if (dialogInput.action === 'hit') {
+        dialogInput.enabled = false;
+        dialogBox.visible = false;
+        _ref5 = entityManager.getFirstEntityAndComponents(['PlayerComponent', 'ActionInputComponent']), playerEntity = _ref5[0], _ = _ref5[1], playerInput = _ref5[2];
+        playerInput.enabled = true;
+        talkeeInput = entityManager.getComponent(dialogBox.talkee, 'ActionInputComponent');
+        if (talkeeInput) {
+          return talkeeInput.enabled = true;
+        }
+      }
+    }
+  };
 
   DialogRenderingSystem.prototype.draw = function(delta, entityManager, assetManager) {
-    var dialogBox, dialogBoxText, i, image, line, result, _i, _len, _ref, _results;
-    result = entityManager.getEntitiesWithComponents('DialogBoxComponent', 'VisibleComponent');
-    if (result.length > 0) {
-      dialogBox = result[0];
-      dialogBoxText = entityManager.getComponent(dialogBox, 'DialogBoxTextComponent');
+    var dialogBox, dialogBoxText, i, image, line, _, _i, _len, _ref, _ref1, _results;
+    _ref = entityManager.getFirstEntityAndComponents(['DialogBoxComponent', 'DialogBoxTextComponent']), _ = _ref[0], dialogBox = _ref[1], dialogBoxText = _ref[2];
+    if (dialogBox.visible) {
       this.cq.font('16px "Press Start 2P"').textBaseline('top').fillStyle('black');
       image = assetManager.assets['pokemon-dialog-box.png'];
       this.cq.drawImage(image, 0, Game.SCREEN_HEIGHT - image.height);
-      _ref = dialogBoxText.text.split('\n');
+      _ref1 = dialogBoxText.text.split('\n');
       _results = [];
-      for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-        line = _ref[i];
+      for (i = _i = 0, _len = _ref1.length; _i < _len; i = ++_i) {
+        line = _ref1[i];
         _results.push(this.cq.fillText(line, 18, Game.SCREEN_HEIGHT - image.height + 22 + 20 * i));
       }
       return _results;
