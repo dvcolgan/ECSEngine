@@ -2,13 +2,51 @@
 <html lang="en">
 
 <head>
-    <title>Check out all my ECS</title>
+<title>Check out all my ECS</title>
+<style>
+body {
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive;
+}
+.preload {
+    display: none;
+}
+.gameboy {
+    margin: 0 auto;
+    background-image: url(images/gameboy.jpg);
+    width: 617px;
+    height: 1018px;
+    position: relative;
+}
+canvas {
+    position: absolute;
+    left: 150px;
+    top: 139px;
+    z-index: 10;
+}
+.tint {
+    position: absolute;
+    left: 150px;
+    top: 139px;
+    width: 320px;
+    height: 288px;
+    background-color: #2D5900;
+    z-index: 20;
+    opacity: 0.25;
+}
+</style>
+<link href='http://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>
 </head>
 <body>
-<h1>Check out all my fragging action</h1>
+<h1>Check out all my Entity Component System</h1>
+<div class="gameboy"><div class="tint"></div></div>
 
 </body>
 <script src="js/lib/canvasquery.js"></script>
 <script src="js/lib/canvasquery.framework.js"></script>
+<script src="js/asset-manager.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/components.js"></script>
+<script src="js/systems.js"></script>
 <script src="js/main.js"></script>
 </html>
