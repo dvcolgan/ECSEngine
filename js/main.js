@@ -12,9 +12,10 @@ Game = (function() {
     var _this = this;
     this.assetManager = new AssetManager();
     this.assetManager.loadImage('pokemon-tiles.png');
+    this.assetManager.loadImage('pokemon-dialog-box.png');
     this.assetManager.loadTilemap('pokemon-level.json');
     this.assetManager.start(function() {
-      var camera, i, npc, player, _i;
+      var camera, dialogBox, i, npc, player, _i;
       _this.entityManager = new EntityManager(window.components);
       _this.cq = cq(Game.SCREEN_WIDTH, Game.SCREEN_HEIGHT).appendTo('.gameboy');
       player = _this.entityManager.createEntityWithComponents([
@@ -58,6 +59,13 @@ Game = (function() {
           }
         ]
       ]);
+      dialogBox = _this.entityManager.createEntityWithComponents([
+        ['DialogBoxComponent', {}], [
+          'DialogBoxTextComponent', {
+            text: "OAK: It's unsafe!\nWild Pokemon live\nin the tall grass!"
+          }
+        ], ['ActionInputComponent', {}], ['KeyboardArrowsInputComponent', {}]
+      ]);
       _this.initializeMap('pokemon-level.json');
       for (i = _i = 0; _i <= 3; i = ++_i) {
         npc = _this.entityManager.createEntityWithComponents([
@@ -91,6 +99,7 @@ Game = (function() {
       }
       _this.tilemapRenderingSystem = new TilemapRenderingSystem(_this.cq);
       _this.canvasRenderSystem = new CanvasRenderSystem(_this.cq);
+      _this.dialogRenderingSystem = new DialogRenderingSystem(_this.cq);
       _this.inputSystem = new InputSystem();
       _this.randomInputSystem = new RandomInputSystem();
       _this.movementSystem = new MovementSystem();
@@ -107,8 +116,9 @@ Game = (function() {
         },
         onrender: function(delta, time) {
           _this.cq.clear('white');
-          _this.tilemapRenderingSystem.update(delta, _this.entityManager, _this.assetManager);
-          return _this.canvasRenderSystem.update(delta, _this.entityManager, _this.assetManager);
+          _this.tilemapRenderingSystem.draw(delta, _this.entityManager, _this.assetManager);
+          _this.canvasRenderSystem.draw(delta, _this.entityManager, _this.assetManager);
+          return _this.dialogRenderingSystem.draw(delta, _this.entityManager, _this.assetManager);
         },
         onresize: function(width, height) {},
         onousedown: function(x, y) {},

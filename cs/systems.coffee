@@ -85,7 +85,7 @@ class TweenSystem
 class CanvasRenderSystem
     constructor: (@cq) ->
 
-    update: (delta, entityManager, assetManager) ->
+    draw: (delta, entityManager, assetManager) ->
         camera = entityManager.getEntitiesWithComponents(['CameraComponent', 'PixelPositionComponent'])
         cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent')
 
@@ -162,19 +162,20 @@ class CameraFollowingSystem
 
         mapLayer = entityManager.getEntitiesWithComponent('TilemapVisibleLayerComponent')[0]
         mapLayerComponent = entityManager.getComponent(mapLayer, 'TilemapVisibleLayerComponent')
-        
+
+        mapWidth = mapLayerComponent.tileWidth * mapLayerComponent.tileData.width
+        mapHeight = mapLayerComponent.tileHeight * mapLayerComponent.tileData.height
 
         cameraPosition.x = followeePosition.x - (Game.SCREEN_WIDTH / 2 - 32)
         cameraPosition.y = followeePosition.y - (Game.SCREEN_HEIGHT / 2 - 16)
-        #cameraPosition.x.clamp(0, camera.
-        if cameraPosition.x < 0 then cameraPosition.x = 0
-        if cameraPosition.y < 0 then cameraPosition.y = 0
+        cameraPosition.x = cameraPosition.x.clamp(0, mapWidth - Game.SCREEN_WIDTH)
+        cameraPosition.y = cameraPosition.y.clamp(0, mapHeight - Game.SCREEN_HEIGHT)
 
 
 class TilemapRenderingSystem
     constructor: (@cq) ->
 
-    update: (delta, entityManager, assetManager) ->
+    draw: (delta, entityManager, assetManager) ->
         camera = entityManager.getSingletonEntityWithComponent('CameraComponent')
         cameraPosition = entityManager.getComponent(camera, 'PixelPositionComponent')
 
@@ -214,3 +215,24 @@ class TilemapRenderingSystem
                             screenX, screenY,
                             layer.tileWidth, layer.tileHeight
                         )
+
+
+class DialogRenderingSystem
+    constructor: (@cq) ->
+    update: (delta, entityManager, assetManager) ->
+        
+
+
+    draw: (delta, entityManager, assetManager) ->
+        result = entityManager.getEntitiesWithComponents('DialogBoxComponent', 'VisibleComponent')
+        if result.length > 0
+            dialogBox = result[0]
+            dialogBoxText = entityManager.getComponent(dialogBox, 'DialogBoxTextComponent')
+
+            @cq.font('16px "Press Start 2P"').textBaseline('top').fillStyle('black')
+
+            image = assetManager.assets['pokemon-dialog-box.png']
+            @cq.drawImage(image, 0, Game.SCREEN_HEIGHT - image.height)
+
+            for line, i in dialogBoxText.text.split('\n')
+                @cq.fillText(line, 18, Game.SCREEN_HEIGHT - image.height + 22 + 20 * i)

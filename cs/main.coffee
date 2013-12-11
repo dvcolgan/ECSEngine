@@ -6,8 +6,11 @@ class Game
 
     constructor: ->
         @assetManager = new AssetManager()
+
         @assetManager.loadImage('pokemon-tiles.png')
+        @assetManager.loadImage('pokemon-dialog-box.png')
         @assetManager.loadTilemap('pokemon-level.json')
+
         @assetManager.start =>
             @entityManager = new EntityManager(window.components)
             @cq = cq(Game.SCREEN_WIDTH, Game.SCREEN_HEIGHT).appendTo('.gameboy')
@@ -35,6 +38,13 @@ class Game
                 ['GridPositionComponent', { col: 0, row: 0 }]
             ])
 
+            dialogBox = @entityManager.createEntityWithComponents([
+                ['DialogBoxComponent', {}]
+                ['DialogBoxTextComponent', { text: "OAK: It's unsafe!\nWild Pokemon live\nin the tall grass!" }]
+                ['ActionInputComponent', {}]
+                ['KeyboardArrowsInputComponent', {}]
+            ])
+
             @initializeMap('pokemon-level.json')
 
             for i in [0..3]
@@ -55,6 +65,7 @@ class Game
 
             @tilemapRenderingSystem = new TilemapRenderingSystem(@cq)
             @canvasRenderSystem = new CanvasRenderSystem(@cq)
+            @dialogRenderingSystem = new DialogRenderingSystem(@cq)
             @inputSystem = new InputSystem()
             @randomInputSystem = new RandomInputSystem()
             @movementSystem = new MovementSystem()
@@ -72,8 +83,9 @@ class Game
 
                 onrender: (delta, time) =>
                     @cq.clear('white')
-                    @tilemapRenderingSystem.update(delta, @entityManager, @assetManager)
-                    @canvasRenderSystem.update(delta, @entityManager, @assetManager)
+                    @tilemapRenderingSystem.draw(delta, @entityManager, @assetManager)
+                    @canvasRenderSystem.draw(delta, @entityManager, @assetManager)
+                    @dialogRenderingSystem.draw(delta, @entityManager, @assetManager)
                     
                 onresize: (width, height) ->
                 onousedown: (x, y) ->

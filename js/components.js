@@ -70,5 +70,10 @@ window.components = {
     tileData: null
   },
   TilemapOutdoorCollisionComponent: {},
-  TilemapIndoorCollisionComponent: {}
+  TilemapIndoorCollisionComponent: {},
+  DialogBoxComponent: {},
+  DialogBoxTextComponent: {
+    text: ''
+  },
+  VisibleComponent: {}
 };

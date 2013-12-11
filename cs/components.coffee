@@ -77,3 +77,10 @@ window.components =
     TilemapOutdoorCollisionComponent: {}
 
     TilemapIndoorCollisionComponent: {}
+
+    DialogBoxComponent: {}
+
+    DialogBoxTextComponent:
+        text: ''
+
+    VisibleComponent: {}
