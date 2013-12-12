@@ -12,6 +12,7 @@ Game = (function() {
     var _this = this;
     this.assetManager = new AssetManager();
     this.assetManager.loadImage('pokemon-tiles.png');
+    this.assetManager.loadImage('pikachu-sprites.png');
     this.assetManager.loadImage('pokemon-dialog-box.png');
     this.assetManager.loadTilemap('pokemon-level.json');
     this.assetManager.start(function() {
@@ -31,20 +32,45 @@ Game = (function() {
             gridSize: Game.GRID_SIZE
           }
         ], [
-          'ShapeRendererComponent', {
-            width: Game.GRID_SIZE,
-            height: Game.GRID_SIZE,
-            type: 'rectangle'
-          }
-        ], [
-          'ColorComponent', {
-            color: '#33ff33'
-          }
-        ], [
           'PokemonMovementComponent', {
             speed: 0.15
           }
-        ], ['ActionInputComponent', {}], ['KeyboardArrowsInputComponent', {}], ['CameraFollowsComponent', {}], ['CollidableComponent', {}], ['DirectionComponent', {}]
+        ], ['ActionInputComponent', {}], ['KeyboardArrowsInputComponent', {}], ['CameraFollowsComponent', {}], ['CollidableComponent', {}], ['DirectionComponent', {}], [
+          'AnimationComponent', {
+            currentAction: 'walk-down',
+            spritesheetUrl: 'pikachu-sprites.png',
+            width: 32,
+            height: 32
+          }
+        ], [
+          'AnimationActionComponent', {
+            name: 'walk-down',
+            row: 0,
+            indices: [0, 1, 0, 2],
+            frameLength: 100
+          }
+        ], [
+          'AnimationActionComponent', {
+            name: 'walk-up',
+            row: 1,
+            indices: [0, 1, 0, 2],
+            frameLength: 100
+          }
+        ], [
+          'AnimationActionComponent', {
+            name: 'walk-left',
+            row: 2,
+            indices: [0, 1],
+            frameLength: 100
+          }
+        ], [
+          'AnimationActionComponent', {
+            name: 'walk-right',
+            row: 3,
+            indices: [0, 1],
+            frameLength: 100
+          }
+        ]
       ]);
       camera = _this.entityManager.createEntityWithComponents([
         ['CameraComponent', {}], [
@@ -85,44 +111,74 @@ Game = (function() {
               gridSize: Game.GRID_SIZE
             }
           ], [
-            'ShapeRendererComponent', {
-              width: Game.GRID_SIZE,
-              height: Game.GRID_SIZE,
-              type: 'rectangle'
-            }
-          ], [
-            'ColorComponent', {
-              color: 'red'
-            }
-          ], [
             'PokemonMovementComponent', {
               speed: 0.15
             }
-          ], ['ActionInputComponent', {}], ['RandomArrowsInputComponent', {}], ['CollidableComponent', {}], ['DirectionComponent', {}]
+          ], ['ActionInputComponent', {}], ['RandomArrowsInputComponent', {}], ['CollidableComponent', {}], ['DirectionComponent', {}], [
+            'AnimationComponent', {
+              currentAction: 'walk-down',
+              spritesheetUrl: 'pikachu-sprites.png',
+              width: 32,
+              height: 32
+            }
+          ], [
+            'AnimationActionComponent', {
+              name: 'walk-down',
+              row: 0,
+              indices: [0, 1, 0, 2],
+              frameLength: 100
+            }
+          ], [
+            'AnimationActionComponent', {
+              name: 'walk-up',
+              row: 1,
+              indices: [0, 1, 0, 2],
+              frameLength: 100
+            }
+          ], [
+            'AnimationActionComponent', {
+              name: 'walk-left',
+              row: 2,
+              indices: [0, 1],
+              frameLength: 100
+            }
+          ], [
+            'AnimationActionComponent', {
+              name: 'walk-right',
+              row: 3,
+              indices: [0, 1],
+              frameLength: 100
+            }
+          ]
         ]);
       }
       _this.tilemapRenderingSystem = new TilemapRenderingSystem(_this.cq);
       _this.canvasRenderSystem = new CanvasRenderSystem(_this.cq);
       _this.dialogRenderingSystem = new DialogRenderingSystem(_this.cq);
+      _this.animatedSpriteSystem = new AnimatedSpriteSystem(_this.cq);
       _this.inputSystem = new InputSystem();
       _this.randomInputSystem = new RandomInputSystem();
       _this.movementSystem = new MovementSystem();
       _this.tweenSystem = new TweenSystem();
       _this.pokemonMovementSystem = new PokemonMovementSystem();
       _this.cameraFollowingSystem = new CameraFollowingSystem();
+      _this.animationDirectionSyncSystem = new AnimationDirectionSyncSystem();
       return _this.cq.framework({
         onstep: function(delta, time) {
           _this.randomInputSystem.update(delta, _this.entityManager, _this.assetManager);
           _this.movementSystem.update(delta, _this.entityManager, _this.assetManager);
           _this.pokemonMovementSystem.update(delta, _this.entityManager, _this.assetManager);
           _this.tweenSystem.update(delta, _this.entityManager, _this.assetManager);
+          _this.animatedSpriteSystem.update(delta, _this.entityManager, _this.assetManager);
           _this.cameraFollowingSystem.update(delta, _this.entityManager, _this.assetManager);
-          return _this.dialogRenderingSystem.update(delta, _this.entityManager, _this.assetManager);
+          _this.dialogRenderingSystem.update(delta, _this.entityManager, _this.assetManager);
+          return _this.animationDirectionSyncSystem.update(delta, _this.entityManager, _this.assetManager);
         },
         onrender: function(delta, time) {
           _this.cq.clear('white');
           _this.tilemapRenderingSystem.draw(delta, _this.entityManager, _this.assetManager);
           _this.canvasRenderSystem.draw(delta, _this.entityManager, _this.assetManager);
+          _this.animatedSpriteSystem.draw(delta, _this.entityManager, _this.assetManager);
           return _this.dialogRenderingSystem.draw(delta, _this.entityManager, _this.assetManager);
         },
         onresize: function(width, height) {},

@@ -8,6 +8,7 @@ class Game
         @assetManager = new AssetManager()
 
         @assetManager.loadImage('pokemon-tiles.png')
+        @assetManager.loadImage('pikachu-sprites.png')
         @assetManager.loadImage('pokemon-dialog-box.png')
         @assetManager.loadTilemap('pokemon-level.json')
 
@@ -23,14 +24,19 @@ class Game
                 ['PlayerComponent', {}]
                 ['PixelPositionComponent', { x: 4 * Game.GRID_SIZE, y: 4 * Game.GRID_SIZE }]
                 ['GridPositionComponent', { col: 4, row: 4, gridSize: Game.GRID_SIZE }]
-                ['ShapeRendererComponent', { width: Game.GRID_SIZE, height: Game.GRID_SIZE, type: 'rectangle' }]
-                ['ColorComponent', { color: '#33ff33' }]
+                #['ShapeRendererComponent', { width: Game.GRID_SIZE, height: Game.GRID_SIZE, type: 'rectangle' }]
+                #['ColorComponent', { color: '#33ff33' }]
                 ['PokemonMovementComponent', { speed: 0.15 }]
                 ['ActionInputComponent', {}]
                 ['KeyboardArrowsInputComponent', {}]
                 ['CameraFollowsComponent', {}]
                 ['CollidableComponent', {}]
                 ['DirectionComponent', {}]
+                ['AnimationComponent', { currentAction: 'walk-down', spritesheetUrl: 'pikachu-sprites.png', width: 32, height: 32 }]
+                ['AnimationActionComponent', { name:  'walk-down', row: 0, indices: [0,1,0,2], frameLength: 100 }]
+                ['AnimationActionComponent', { name:    'walk-up', row: 1, indices: [0,1,0,2], frameLength: 100 }]
+                ['AnimationActionComponent', { name:  'walk-left', row: 2, indices: [0,1],     frameLength: 100 }]
+                ['AnimationActionComponent', { name: 'walk-right', row: 3, indices: [0,1],     frameLength: 100 }]
             ])
 
             camera = @entityManager.createEntityWithComponents([
@@ -55,24 +61,31 @@ class Game
                         y: Math.round(Math.random() * Game.SCREEN_HEIGHT / Game.GRID_SIZE) * Game.GRID_SIZE
                     }]
                     ['GridPositionComponent', { col: 4, row: 4, gridSize: Game.GRID_SIZE }]
-                    ['ShapeRendererComponent', { width: Game.GRID_SIZE, height: Game.GRID_SIZE, type: 'rectangle' }]
-                    ['ColorComponent', { color: 'red' }]
+                    #['ShapeRendererComponent', { width: Game.GRID_SIZE, height: Game.GRID_SIZE, type: 'rectangle' }]
+                    #['ColorComponent', { color: 'red' }]
                     ['PokemonMovementComponent', { speed: 0.15 }]
                     ['ActionInputComponent', {}]
                     ['RandomArrowsInputComponent', {}]
                     ['CollidableComponent', {}]
                     ['DirectionComponent', {}]
+                    ['AnimationComponent', { currentAction: 'walk-down', spritesheetUrl: 'pikachu-sprites.png', width: 32, height: 32 }]
+                    ['AnimationActionComponent', { name:  'walk-down', row: 0, indices: [0,1,0,2], frameLength: 100 }]
+                    ['AnimationActionComponent', { name:    'walk-up', row: 1, indices: [0,1,0,2], frameLength: 100 }]
+                    ['AnimationActionComponent', { name:  'walk-left', row: 2, indices: [0,1],     frameLength: 100 }]
+                    ['AnimationActionComponent', { name: 'walk-right', row: 3, indices: [0,1],     frameLength: 100 }]
                 ])
 
             @tilemapRenderingSystem = new TilemapRenderingSystem(@cq)
             @canvasRenderSystem = new CanvasRenderSystem(@cq)
             @dialogRenderingSystem = new DialogRenderingSystem(@cq)
+            @animatedSpriteSystem = new AnimatedSpriteSystem(@cq)
             @inputSystem = new InputSystem()
             @randomInputSystem = new RandomInputSystem()
             @movementSystem = new MovementSystem()
             @tweenSystem = new TweenSystem()
             @pokemonMovementSystem = new PokemonMovementSystem()
             @cameraFollowingSystem = new CameraFollowingSystem()
+            @animationDirectionSyncSystem = new AnimationDirectionSyncSystem()
 
             @cq.framework
                 onstep: (delta, time) =>
@@ -80,13 +93,16 @@ class Game
                     @movementSystem.update(delta, @entityManager, @assetManager)
                     @pokemonMovementSystem.update(delta, @entityManager, @assetManager)
                     @tweenSystem.update(delta, @entityManager, @assetManager)
+                    @animatedSpriteSystem.update(delta, @entityManager, @assetManager)
                     @cameraFollowingSystem.update(delta, @entityManager, @assetManager)
                     @dialogRenderingSystem.update(delta, @entityManager, @assetManager)
+                    @animationDirectionSyncSystem.update(delta, @entityManager, @assetManager)
 
                 onrender: (delta, time) =>
                     @cq.clear('white')
                     @tilemapRenderingSystem.draw(delta, @entityManager, @assetManager)
                     @canvasRenderSystem.draw(delta, @entityManager, @assetManager)
+                    @animatedSpriteSystem.draw(delta, @entityManager, @assetManager)
                     @dialogRenderingSystem.draw(delta, @entityManager, @assetManager)
                     
                 onresize: (width, height) ->

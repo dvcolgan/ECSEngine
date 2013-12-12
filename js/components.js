@@ -35,6 +35,7 @@ window.components = {
     up: false,
     down: false,
     action: false,
+    cancel: false,
     enabled: true
   },
   RandomArrowsInputComponent: {},
@@ -79,5 +80,22 @@ window.components = {
   },
   DialogBoxTextComponent: {
     text: ''
+  },
+  NPCDialogSayingComponent: {
+    text: ''
+  },
+  AnimationComponent: {
+    currentAction: 'walk-down',
+    spritesheetUrl: 'pikachu-sprites.png',
+    width: 32,
+    height: 32
+  },
+  AnimationActionComponent: {
+    name: 'walk-down',
+    row: 0,
+    indices: [],
+    frameLength: 100,
+    currentFrame: 0,
+    frameElapsedTime: 0
   }
 };

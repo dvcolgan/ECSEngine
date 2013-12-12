@@ -19,8 +19,6 @@ class PokemonMovementSystem
                     if input.up then dy -= 1
                     if input.down then dy += 1
                 if dx > 0 or dx < 0 or dy > 0 or dy < 0
-                    console.log JSON.stringify(input)
-                    console.log dx + ' ' + dy
                     if dx < 0 then direction.direction = 'left'
                     if dx > 0 then direction.direction = 'right'
                     if dy < 0 then direction.direction = 'up'
@@ -127,7 +125,7 @@ class InputSystem
                     if key == 'right' then input.right = off
                     if key == 'up'    then input.up = off
                     if key == 'down'  then input.down = off
-                    if key == 'z' or key == 'comma' then input.action = off
+                    if key == 'z' or key == 'semicolon' then input.action = off
                     if key == 'x' or key == 'q'     then input.cancel = off
                 else
                     # TODO MAKE A COFFEESCRIPT PRECOMPILER
@@ -143,7 +141,7 @@ class InputSystem
                     if key == 'down'
                         if input.down  == 'hit' then input.down  = 'held' else input.down  = 'hit'
 
-                    if key == 'z' or key == 'comma'
+                    if key == 'z' or key == 'semicolon'
                         if input.action == 'hit' then input.action = 'held' else input.action = 'hit'
                     if key == 'x' or key == 'q'
                         if input.cancel == 'hit' then input.cancel = 'held' else input.cancel = 'hit'
@@ -185,15 +183,15 @@ class CameraFollowingSystem
         [camera, _, cameraPosition] = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent'])
         [followee, _, followeePosition] = entityManager.getFirstEntityAndComponents(['CameraFollowsComponent', 'PixelPositionComponent'])
 
-        [mapLayer, mapLayerComponent] = entityManager.getFirstEntityAndComponents(['TilemapVisibleLayerComponent'])
+        #[mapLayer, mapLayerComponent] = entityManager.getFirstEntityAndComponents(['TilemapVisibleLayerComponent'])
 
-        mapWidth = mapLayerComponent.tileWidth * mapLayerComponent.tileData.width
-        mapHeight = mapLayerComponent.tileHeight * mapLayerComponent.tileData.height
+        #mapWidth = mapLayerComponent.tileWidth * mapLayerComponent.tileData.width
+        #mapHeight = mapLayerComponent.tileHeight * mapLayerComponent.tileData.height
 
         cameraPosition.x = followeePosition.x - (Game.SCREEN_WIDTH / 2 - 32)
         cameraPosition.y = followeePosition.y - (Game.SCREEN_HEIGHT / 2 - 16)
-        cameraPosition.x = cameraPosition.x.clamp(0, mapWidth - Game.SCREEN_WIDTH)
-        cameraPosition.y = cameraPosition.y.clamp(0, mapHeight - Game.SCREEN_HEIGHT)
+        #cameraPosition.x = cameraPosition.x.clamp(0, mapWidth - Game.SCREEN_WIDTH)
+        #cameraPosition.y = cameraPosition.y.clamp(0, mapHeight - Game.SCREEN_HEIGHT)
 
 
 class TilemapRenderingSystem
@@ -289,3 +287,48 @@ class DialogRenderingSystem
 
             for line, i in dialogBoxText.text.split('\n')
                 @cq.fillText(line, 18, Game.SCREEN_HEIGHT - image.height + 22 + 20 * i)
+
+
+class AnimationDirectionSyncSystem
+    update: (delta, entityManager, assetManager) ->
+        for [animationEntity, animation, direction] in entityManager.iterateEntitiesAndComponents(['AnimationComponent', 'DirectionComponent'])
+            animation.currentAction = 'walk-' + direction.direction
+
+class AnimatedSpriteSystem
+    constructor: (@cq) ->
+
+    update: (delta, entityManager, assetManager) ->
+        for [animationEntity, animation] in entityManager.iterateEntitiesAndComponents(['AnimationComponent'])
+            actions = entityManager.getComponents(animationEntity, 'AnimationActionComponent')
+            for action in actions
+                if action.name == animation.currentAction
+                    action.frameElapsedTime += delta
+                    if action.frameElapsedTime > action.frameLength
+                        action.frameElapsedTime = 0
+                        action.currentFrame++
+                        if action.currentFrame >= action.indices.length
+                            action.currentFrame = 0
+                    break
+
+    draw: (delta, entityManager, assetManager) ->
+        [camera, _, cameraPosition] = entityManager.getFirstEntityAndComponents(['CameraComponent', 'PixelPositionComponent'])
+
+        for [animationEntity, animation, animationPosition] in entityManager.iterateEntitiesAndComponents(['AnimationComponent', 'PixelPositionComponent'])
+
+            actions = entityManager.getComponents(animationEntity, 'AnimationActionComponent')
+            for action in actions
+                if action.name == animation.currentAction
+
+                    imageX = action.indices[action.currentFrame] * animation.width
+                    imageY = action.row * animation.height
+
+                    screenX = Math.floor(animationPosition.x - cameraPosition.x)
+                    screenY = Math.floor(animationPosition.y - cameraPosition.y)
+                    @cq.drawImage(
+                        assetManager.assets[animation.spritesheetUrl],
+                        imageX, imageY,
+                        animation.width, animation.height,
+                        screenX, screenY,
+                        animation.width, animation.height
+                    )
+                    break
