@@ -2,8 +2,10 @@ class AssetManager
     constructor: ->
         @imagesPrefix = 'images/'
         @tilemapsPrefix = 'levels/'
+        @audiosPrefix = 'audio/'
         @imagesToLoad = []
         @tilemapsToLoad = []
+        @audiosToLoad = []
         @assets = {}
         @remaining = 0
 
@@ -12,6 +14,9 @@ class AssetManager
 
     loadTilemap: (url) ->
         @tilemapsToLoad.push(url)
+
+    loadAudio: (url) ->
+        @audiosToLoad.push(url)
 
     start: (callback) ->
         for tilemapUrl in @tilemapsToLoad
@@ -34,7 +39,22 @@ class AssetManager
             img.src = @imagesPrefix + imgUrl
             @remaining++
             img.onload = =>
+                console.log 'loaded image'
                 @remaining--
                 if @remaining == 0
                     callback()
             @assets[imgUrl] = img
+
+        for audioUrl in @audiosToLoad
+            audio = new Audio()
+            audio.addEventListener('canplaythrough', (=>
+                console.log 'loaded audio'
+                @remaining--
+                if @remaining == 0
+                    callback()
+            ), false)
+            audio.src = @audiosPrefix + audioUrl
+            @remaining++
+            @assets[audioUrl] = audio
+
+

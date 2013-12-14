@@ -1,4 +1,4 @@
-Dialog system
 Simple battle system
-overworld movement
-
+-Practice graphics
+-Add audio somehow
+-Add the event system

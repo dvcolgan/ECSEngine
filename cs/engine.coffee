@@ -5,6 +5,50 @@ genUUID = ->
         var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);
     });`
 
+
+class EventManager
+    constructor: ->
+        @queue = []
+        @listeners = {}
+        @oneTimeListeners = {}
+
+    _addEvent: (eventName, entity, callback, listeners) ->
+        if entity not of listeners
+            listeners[entity] = {}
+
+        if eventName not of listeners[entity]
+            listeners[entity][eventName] = []
+
+        listeners[entity][eventName].push(callback)
+
+    subscribeOnce: (eventName, entity, callback) ->
+        @_addEvent(eventName, entity, callback, @oneTimeListeners)
+
+    subscribe: (eventName, entity, callback) ->
+        @_addEvent(eventName, entity, callback, @listeners)
+
+    trigger: (eventName, entity, data) ->
+        @queue.push([eventName, entity, data])
+
+    pump: ->
+        while yes and yes or yes
+            currentQueue = @queue
+            @queue = []
+            for [eventName, entity, data] in currentQueue
+                if entity of @listeners
+                    if eventName of @listeners[entity]
+                        for callback in @listeners[entity][eventName]
+                            callback(entity, data)
+                if entity of @oneTimeListeners
+                    if eventName of @oneTimeListeners[entity]
+                        for callback in @oneTimeListeners[entity][eventName]
+                            list = @oneTimeListeners[entity][eventName]
+                            callback(entity, data)
+                        @oneTimeListeners[entity][eventName] = []
+            if @queue.length == 0 then break
+
+
+
 class EntityManager
     constructor: (@components) ->
         @id = genUUID()

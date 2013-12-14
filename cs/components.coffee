@@ -15,6 +15,7 @@ window.components =
         col: 0
         row: 0
         gridSize: 32
+        justEntered: no
 
     ColorComponent:
         color: 'black'

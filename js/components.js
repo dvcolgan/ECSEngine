@@ -14,7 +14,8 @@ window.components = {
   GridPositionComponent: {
     col: 0,
     row: 0,
-    gridSize: 32
+    gridSize: 32,
+    justEntered: false
   },
   ColorComponent: {
     color: 'black'

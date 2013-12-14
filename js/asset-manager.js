@@ -5,8 +5,10 @@ AssetManager = (function() {
   function AssetManager() {
     this.imagesPrefix = 'images/';
     this.tilemapsPrefix = 'levels/';
+    this.audiosPrefix = 'audio/';
     this.imagesToLoad = [];
     this.tilemapsToLoad = [];
+    this.audiosToLoad = [];
     this.assets = {};
     this.remaining = 0;
   }
@@ -19,8 +21,12 @@ AssetManager = (function() {
     return this.tilemapsToLoad.push(url);
   };
 
+  AssetManager.prototype.loadAudio = function(url) {
+    return this.audiosToLoad.push(url);
+  };
+
   AssetManager.prototype.start = function(callback) {
-    var img, imgUrl, tilemapUrl, _fn, _i, _j, _len, _len1, _ref, _ref1, _results,
+    var audio, audioUrl, img, imgUrl, tilemapUrl, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results,
       _this = this;
     _ref = this.tilemapsToLoad;
     _fn = function(tilemapUrl) {
@@ -45,19 +51,35 @@ AssetManager = (function() {
       _fn(tilemapUrl);
     }
     _ref1 = this.imagesToLoad;
-    _results = [];
     for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
       imgUrl = _ref1[_j];
       img = new Image();
       img.src = this.imagesPrefix + imgUrl;
       this.remaining++;
       img.onload = function() {
+        console.log('loaded image');
         _this.remaining--;
         if (_this.remaining === 0) {
           return callback();
         }
       };
-      _results.push(this.assets[imgUrl] = img);
+      this.assets[imgUrl] = img;
+    }
+    _ref2 = this.audiosToLoad;
+    _results = [];
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      audioUrl = _ref2[_k];
+      audio = new Audio();
+      audio.addEventListener('canplaythrough', (function() {
+        console.log('loaded audio');
+        _this.remaining--;
+        if (_this.remaining === 0) {
+          return callback();
+        }
+      }), false);
+      audio.src = this.audiosPrefix + audioUrl;
+      this.remaining++;
+      _results.push(this.assets[audioUrl] = audio);
     }
     return _results;
   };
